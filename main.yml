@@ -1,0 +1,67 @@
+- name: Gathering System Info
+  hosts: cisservergroup
+  tasks:
+      
+  - name: Install Software
+    become: true
+    block:
+      - name: Import Google Chrome GPG key
+        ansible.builtin.rpm_key:
+          key: https://dl.google.com/linux/linux_signing_key.pub
+          state: present
+
+      - name: Install Google Chrome from remote repository
+        ansible.builtin.dnf:
+          name: 'https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm'
+          state: present
+
+      - name: Install Mozilla Firefox
+        ansible.builtin.dnf:
+          name: 'firefox'
+          state: latest
+
+      - name: Install Git
+        ansible.builtin.dnf:
+          name: 'git'
+          state: present
+
+      - name: Install Apache2 (httpd)
+        ansible.builtin.dnf:
+          name: 'httpd'
+          state: present
+
+      - name: Install MariaDB
+        ansible.builtin.dnf:
+          name: 'mariadb-server'
+          state: present
+      
+  - name: Copy HTML files
+    become: true
+    ansible.builtin.copy:
+      src: files/
+      dest: /var/www/html/
+      owner: apache
+      group: apache
+      mode: '0640'
+    
+  - name: Remove Google Chrome
+    become: true
+    ansible.builtin.dnf:
+      name: 'google-chrome-stable'
+      state: absent
+
+  - name: Reboot machine
+    become: true
+    ansible.builtin.reboot:
+
+  - name: Enable httpd service
+    become: true
+    ansible.builtin.systemd_service:
+      name: httpd
+      enabled: true
+
+  - name: Restart httpd service
+    become: true
+    ansible.builtin.systemd_service:
+      name: httpd.service
+      state: reloaded
